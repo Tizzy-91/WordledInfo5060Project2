@@ -2,37 +2,16 @@ syntax = "proto3";
 
 option csharp_namespace = "WordleGameServer.Protos";
 
-package dailyworlde;
+package dailywordle;
 
 service DailyWordle {
-  rpc GetWord() returns (GetWordResponse);
-  rpc Play(stream PlayRequest) returns (stream PlayResponse);
-  rpc GetStats() returns (GetStatsResponse);
+  rpc GetDailyWordle(GetDailyWordleRequest) returns (GetDailyWordleResponse);
 }
 
-
-message GetWordResponse {
-   string word = 1;
+message GetDailyWordleRequest {
 }
 
-message PlayRequest {
-  repeated string guess = 1;
-}
-
-message PlayResponse {
-  bool isCorrect = 1;
-  bool isGameOver = 2;
-  string correctLetters = 3;
-  string misplacedLetters = 4;
-  repeated string unusedLetters = 4;
-}
-
-message GetStatsRequest {
-}
-
-message GetStatsResponse {
-  int32 totalPlayers = 1;
-  int32 correctGuesses = 2;
-  int32 gamesLost = 3;
+message GetDailyWordleResponse {
+  string word = 1;
 }
 
