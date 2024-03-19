@@ -5,12 +5,13 @@ namespace WordleGameServer.Services
 {
     public class DailyWordleService : DailyWordle.DailyWordleBase
     {
-        private readonly ILogger<DailyWordleService> _logger;
-
-        public DailyWordleService(ILogger<DailyWordleService> logger)
+        public override Task<DailyWordleResponse> GetDailyWordle(DailyWordleRequest request, ServerCallContext context)
         {
-            _logger = logger;
+            List<char> word = new(request.Word.ToCharArray());
 
+            return Task.FromResult(new DailyWordleResponse { Word = word.ToString()});
         }
+
+
     }
 }
