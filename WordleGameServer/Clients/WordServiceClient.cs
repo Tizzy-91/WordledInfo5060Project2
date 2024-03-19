@@ -21,7 +21,7 @@ namespace WordleGameServer.Clients
         {
             if(_dailyWordClient == null)
             {
-                GrpcChannel channel = GrpcChannel.ForAddress("https://localhost:5001");
+                GrpcChannel channel = GrpcChannel.ForAddress("https://localhost:7118");
                 _dailyWordClient = new DailyWord.DailyWordClient(channel);
             }
         }

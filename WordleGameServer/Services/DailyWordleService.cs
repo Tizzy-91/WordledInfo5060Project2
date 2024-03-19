@@ -8,10 +8,7 @@ namespace WordleGameServer.Services
         public override Task<DailyWordleResponse> GetDailyWordle(DailyWordleRequest request, ServerCallContext context)
         {
             List<char> word = new(request.Word.ToCharArray());
-
             return Task.FromResult(new DailyWordleResponse { Word = word.ToString()});
         }
-
-
     }
 }
