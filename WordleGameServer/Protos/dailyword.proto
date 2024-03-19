@@ -5,11 +5,10 @@ option csharp_namespace = "WordServer.Protos";
 package word;
 
 service DailyWord {
-  rpc GetWord (WordRequest) returns (WordReply) {}
+  rpc GetWord (WordRequest) returns (WordReply);
 }
 
 message WordReply {
-  string date = 1;
   string word = 2;
 }
 

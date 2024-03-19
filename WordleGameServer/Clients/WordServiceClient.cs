@@ -10,6 +10,7 @@ namespace WordleGameServer.Clients
 
         public static string GetWord(string word)
         {
+
             ConnectToServer();
 
             WordReply? reply = _dailyWordClient?.GetWord(new WordRequest { Word = word});

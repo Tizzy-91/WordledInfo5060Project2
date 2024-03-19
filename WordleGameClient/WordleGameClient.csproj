@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Protos\dailyword.proto" />
+    <None Remove="Protos\dailywordle.proto" />
   </ItemGroup>
 
   <ItemGroup>
@@ -21,7 +21,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Protobuf Include="Protos\dailyword.proto" GrpcServices="Client" />
+    <ProjectReference Include="..\WordleGameServer\WordleGameServer.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Protobuf Include="Protos\dailywordle.proto" GrpcServices="Client" />
   </ItemGroup>
 
 </Project>

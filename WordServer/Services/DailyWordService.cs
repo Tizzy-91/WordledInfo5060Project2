@@ -44,6 +44,12 @@ namespace WordServer.Services
         public override Task<WordReply> GetWord(WordRequest request, ServerCallContext context)
         {
             // Select a random word from the loaded words
+
+            foreach (var word in _words)
+            {
+                Console.WriteLine(word);
+            }
+
             string randomWord = _words.Count > 0 ? _words[_random.Next(_words.Count)] : "No words available";
 
             // Return the random word as the response

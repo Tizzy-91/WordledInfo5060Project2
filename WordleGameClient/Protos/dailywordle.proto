@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+option csharp_namespace = "WordleGameServer.Protos";
+
+package dailywordle;
+
+service DailyWordle {
+  rpc GetDailyWordle(DailyWordleRequest) returns (DailyWordleResponse);
+  rpc Play(stream PlayRequest) returns (stream PlayResponse);
+}
+
+message DailyWordleRequest {
+  string word = 1;
+}
+
+message DailyWordleResponse {
+  string word = 1;
+}
+
+message PlayRequest {
+  string word = 1;
+}
+
+message PlayResponse {
+  bool correct = 1;
+  bool isOver = 2;
+  string correctLetters = 3;
+  int32 numberOfGuesses = 4;
+  bool win = 5;
+}
+
+

@@ -1,7 +1,8 @@
 ﻿using Grpc.Core;
 using Grpc.Net.Client;
 using System;
-using WordServer.Protos;
+using WordleGameServer.Protos;
+using WordleGameServer.Services;
 
 namespace WordleGameClient
 {
@@ -12,7 +13,7 @@ namespace WordleGameClient
             try
             {
                 var channel = GrpcChannel.ForAddress("http://localhost:5260");
-                var wordServ = new DailyWord.DailyWordClient(channel);
+                var wordServ = new DailyWordle.DailyWordleClient(channel);
 
                 int numGuesses = 0;
 
@@ -29,12 +30,13 @@ namespace WordleGameClient
                     }
                     else
                     {
-                        var reply = wordServ.GetWord(new WordRequest { Word = word });
-                        while(word != reply.Word)
+                        var reply = wordServ.GetDailyWordle(new DailyWordleRequest { Word = word });
+
+                        Console.WriteLine("This is a test print out the daily word is " + reply.Word);
+                        while (word != reply.Word)
                         {
                             Console.WriteLine("Try again");
                             word = Console.ReadLine() ?? "";
-                            reply = wordServ.GetWord(new WordRequest { Word = word });
                         }   
                         Console.WriteLine("You got it!");
                         numGuesses++;
