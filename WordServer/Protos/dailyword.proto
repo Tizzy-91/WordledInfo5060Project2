@@ -6,6 +6,7 @@ package word;
 
 service DailyWord {
   rpc GetWord (WordRequest) returns (WordReply);
+  rpc ValidateWord (ValidateWordRequest) returns (ValidateWordReply);
 }
 
 message WordReply {
@@ -16,6 +17,10 @@ message WordRequest {
 	string word = 1;
 }
 
-message ValidateWord {
-	bool valid = 1;
+message ValidateWordRequest {
+  string guess = 1;
+}
+
+message ValidateWordReply {
+  bool valid = 1;
 }

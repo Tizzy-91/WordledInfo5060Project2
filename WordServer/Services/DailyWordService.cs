@@ -58,5 +58,16 @@ namespace WordServer.Services
                 Word = randomWord
             });
         }
+
+        public override Task<ValidateWordReply> ValidateWord(ValidateWordRequest request, ServerCallContext context)
+        {
+            // Check if the guess is in the words file
+            bool isValid = _words.Contains(request.Guess);
+
+            return Task.FromResult(new ValidateWordReply
+            {
+                Valid = isValid
+            });
+        }
     }
 }

@@ -18,6 +18,15 @@ namespace WordleGameServer.Clients
             return reply?.Word ?? "";
         }
 
+        public static bool ValidateGuess(string guess)
+        {
+            ConnectToServer();
+
+            ValidateWordReply? reply = _dailyWordClient?.ValidateWord(new ValidateWordRequest { Guess = guess });
+
+            return reply?.Valid ??  false;
+        }
+
         private static void ConnectToServer()
         {
             if(_dailyWordClient == null)
