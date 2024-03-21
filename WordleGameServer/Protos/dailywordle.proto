@@ -9,6 +9,8 @@ package dailywordle;
 
 service DailyWordle {
   rpc GetDailyWordle(google.protobuf.Empty) returns (DailyWordleResponse);
+  rpc Play (stream GuessRequest) returns (stream GuessResponse);
+  rpc GetStats (WordStatsRequest) returns (WordStatsResponse);
 }
 
 
@@ -16,4 +18,31 @@ message DailyWordleResponse {
   string word = 1;
 }
 
+message GuessRequest {
+    string guess = 1;
+}
 
+message GuessResponse {
+    bool correctGuess = 1;
+    bool gameOver = 2;
+    string feedback = 3;
+}
+
+message WordStatsRequest {
+    // TODO: what do we need to request?
+}
+
+message WordStatsResponse {
+    uint32 numPlayers = 1;
+    uint32 winnersPercentage = 2;
+    GuessDistribution guessDistribution = 3;
+}
+
+message GuessDistribution {
+    uint32 guesses1 = 1;
+    uint32 guesses2 = 2;
+    uint32 guesses3 = 3;
+    uint32 guesses4 = 4;
+    uint32 guesses5 = 5;
+    uint32 guesses6 = 6;
+}
