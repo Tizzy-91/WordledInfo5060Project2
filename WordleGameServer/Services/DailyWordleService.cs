@@ -55,6 +55,7 @@ namespace WordleGameServer.Services
                 numGuessed++;
                 string feedback = "";
                 int charIndex = 0;
+
                 // update letters lists and generate feedback
                 foreach (char letter in guess.Guess)
                 {
