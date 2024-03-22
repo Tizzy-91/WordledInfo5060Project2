@@ -8,7 +8,6 @@ import "google/protobuf/empty.proto";
 package dailywordle;
 
 service DailyWordle {
-  rpc GetDailyWordle(google.protobuf.Empty) returns (DailyWordleResponse);
   rpc Play (stream GuessRequest) returns (stream GuessResponse);
   rpc GetStats (WordStatsRequest) returns (WordStatsResponse);
 }

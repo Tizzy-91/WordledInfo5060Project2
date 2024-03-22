@@ -14,7 +14,7 @@ message WordReply {
 }
 
 message WordRequest {
-	string word = 1;
+	//string word = 1;
 }
 
 message ValidateWordRequest {

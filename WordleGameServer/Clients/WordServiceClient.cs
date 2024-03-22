@@ -8,16 +8,25 @@ namespace WordleGameServer.Clients
     {
         public static DailyWord.DailyWordClient? _dailyWordClient = null;
 
-        public static string GetWord(string word)
+        /// <summary>
+        /// Gets the daily word from WordServer
+        /// </summary>
+        /// <returns></returns>
+        public static string GetWord()
         {
 
             ConnectToServer();
 
-            WordReply? reply = _dailyWordClient?.GetWord(new WordRequest { Word = word});
+            WordReply? reply = _dailyWordClient?.GetWord(new WordRequest { });
 
             return reply?.Word ?? "";
         }
 
+        /// <summary>
+        /// Validates the user's guess if it matches a word in the text file
+        /// </summary>
+        /// <param name="guess"></param>
+        /// <returns>bool representing if the guess is valid</returns>
         public static bool ValidateGuess(string guess)
         {
             ConnectToServer();
@@ -27,6 +36,9 @@ namespace WordleGameServer.Clients
             return reply?.Valid ??  false;
         }
 
+        /// <summary>
+        /// Connects to the DailyWordServer
+        /// </summary>
         private static void ConnectToServer()
         {
             if(_dailyWordClient == null)
