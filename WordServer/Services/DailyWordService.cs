@@ -32,7 +32,7 @@ namespace WordServer.Services
                 string json = File.ReadAllText(WordleJsonFile);
 
                 // Deserialize the JSON content into a list of strings
-                return JsonConvert.DeserializeObject<List<string>>(json);
+                return JsonConvert.DeserializeObject<List<string>>(json)!;
             }
             catch (Exception ex)
             {

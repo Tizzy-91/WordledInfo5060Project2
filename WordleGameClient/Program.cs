@@ -18,6 +18,9 @@ namespace WordleGameClient
                 int numGuesses = 0;
 
                 string word;
+
+                PrintHelp();
+
                 do
                 {
                     Console.WriteLine("\nWelcome to Wordle you have 6 guesses! and it needs to be 5 letters!");
@@ -49,6 +52,21 @@ namespace WordleGameClient
             {
                 Console.WriteLine("Error The word server is currently unavaible");
             }
+        }
+
+        public static void PrintHelp()
+        {
+            Console.WriteLine("+-------------+");
+            Console.WriteLine("|   Wordled   |");
+            Console.WriteLine("+-------------+");
+
+            Console.WriteLine("\nYou have 6 chances to guess a 5-letter word.");
+            Console.WriteLine("Each guess must be a 'playable' 5 letter word.");
+            Console.WriteLine("After a guess, the game will display a series of");
+            Console.WriteLine("characters to show how good your guess was.");
+            Console.WriteLine("\nx - means the letter above is not in the word.");
+            Console.WriteLine("? - means the letter should be in another spot.");
+            Console.WriteLine("* - means the letter is correct in this spot.");
         }
     }
 }

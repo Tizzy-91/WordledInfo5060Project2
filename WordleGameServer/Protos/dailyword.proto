@@ -10,7 +10,7 @@ service DailyWord {
 }
 
 message WordReply {
-  string word = 2;
+  string word = 1;
 }
 
 message WordRequest {
