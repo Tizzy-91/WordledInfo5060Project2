@@ -2,32 +2,30 @@
 using Google.Protobuf.WellKnownTypes;
 using WordleGameServer.Clients;
 using WordleGameServer.Protos;
+using System;
 
 namespace WordleGameServer.Services
 {
     public class DailyWordleService : DailyWordle.DailyWordleBase
     {
+        private WordStatsResponse currentDayStats = new WordStatsResponse();
+
         public DailyWordleService()
         {
-
+            currentDayStats = new WordStatsResponse();
+            currentDayStats.GuessDistribution = new GuessDistribution();
         }
 
+        /// <summary>
+        /// runs the game of wordle
+        /// </summary>
+        /// <param name="requestStream"></param>
+        /// <param name="responseStream"></param>
+        /// <param name="context"></param>
+        /// <returns></returns>
         public override async Task Play(IAsyncStreamReader<GuessRequest> requestStream, IServerStreamWriter<GuessResponse> responseStream, ServerCallContext context)
         {
-            Console.WriteLine(
-                 "+-------------------+" +
-                 "\n|   W O R D L E D   | +" +
-                 "\n+-------------------+\n" +
-                 "\nYou have 6 chances to guess a 5-letter word." +
-                 "\nEach guess must be a 'playable' 5 letter word." +
-                 "\nAfter a guess the game will display a series of" +
-                 "\ncharacters to show you how good your guess was." +
-                 "\nx - means the letter above is not in the word." +
-                 "\n? - means the letter should be in another spot." +
-                 "\n* - means the letter is correct in this spot.\n"
-            );
 
-            
             string alphabet = "abcdefghijklmnopqrstuvwxyz";
 
             // populate available letters (alphabet)
@@ -96,20 +94,86 @@ namespace WordleGameServer.Services
                 if (guess.Guess == dailyWord || numGuessed >= 6)
                 {
                     isDone = true;
+                    UpdateGameStats(numGuessed);
                     break;
                 }
 
-                // TODO: prepare to get next word
+                // TODO: prepare to get next word?
 
 
                
+            
             }
         }
 
+        /// <summary>
+        /// Gets the game statistics for todays wordle
+        /// </summary>
+        /// <param name="request"></param>
+        /// <param name="context"></param>
+        /// <returns>currents day's game stats</returns>
         public override Task<WordStatsResponse> GetStats(WordStatsRequest request, ServerCallContext context)
         {
-            // TODO: returns all the stored user-statistics for the current daily word 
-            return Task.FromResult(new WordStatsResponse { });
+            currentDayStats.WinnersPercentage = (UInt32)CalculateWinnersPercentage();
+
+            return Task.FromResult(currentDayStats);
+        }
+
+        /// <summary>
+        /// Updates the game stats
+        /// </summary>
+        /// <param name="numGuessed"></param>
+        private void UpdateGameStats(int numGuessed)
+        {
+            currentDayStats.NumPlayers += 1;
+
+            switch (numGuessed)
+            {
+                case 1:
+                    currentDayStats.GuessDistribution.Guesses1 += 1;
+                    break;
+                case 2:
+                    currentDayStats.GuessDistribution.Guesses2 += 1;
+                    break;
+                case 3:
+                    currentDayStats.GuessDistribution.Guesses3 += 1;
+                    break;
+                case 4:
+                    currentDayStats.GuessDistribution.Guesses4 += 1;
+                    break;
+                case 5:
+                    currentDayStats.GuessDistribution.Guesses5 += 1;
+                    break;
+                case 6:
+                    currentDayStats.GuessDistribution.Guesses6 += 1;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Calculates the percentage of winners based on the numbers of players and count of winners
+        /// </summary>
+        /// <returns>percentage of winners</returns>
+        private double CalculateWinnersPercentage()
+        {
+            UInt32 totalWinners = currentDayStats.GuessDistribution.Guesses1 +
+                                  currentDayStats.GuessDistribution.Guesses2 +
+                                  currentDayStats.GuessDistribution.Guesses3 +
+                                  currentDayStats.GuessDistribution.Guesses4 +
+                                  currentDayStats.GuessDistribution.Guesses5 +
+                                  currentDayStats.GuessDistribution.Guesses6;
+
+            if (currentDayStats.NumPlayers > 0)
+            {
+                double percentage = (double)totalWinners / currentDayStats.NumPlayers * 100;
+                return percentage;
+            }
+            else
+            {
+                return 0.0; // no players
+            }
         }
 
     }
