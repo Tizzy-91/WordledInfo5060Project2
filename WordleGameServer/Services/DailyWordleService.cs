@@ -3,12 +3,14 @@ using Google.Protobuf.WellKnownTypes;
 using WordleGameServer.Clients;
 using WordleGameServer.Protos;
 using System;
+using System.Threading;
 
 namespace WordleGameServer.Services
 {
     public class DailyWordleService : DailyWordle.DailyWordleBase
     {
         private WordStatsResponse currentDayStats = new WordStatsResponse();
+        private static Mutex mutex = new Mutex();
 
         public DailyWordleService()
         {
@@ -125,31 +127,43 @@ namespace WordleGameServer.Services
         /// <param name="numGuessed"></param>
         private void UpdateGameStats(int numGuessed)
         {
-            currentDayStats.NumPlayers += 1;
-
-            switch (numGuessed)
+            try
             {
-                case 1:
-                    currentDayStats.GuessDistribution.Guesses1 += 1;
-                    break;
-                case 2:
-                    currentDayStats.GuessDistribution.Guesses2 += 1;
-                    break;
-                case 3:
-                    currentDayStats.GuessDistribution.Guesses3 += 1;
-                    break;
-                case 4:
-                    currentDayStats.GuessDistribution.Guesses4 += 1;
-                    break;
-                case 5:
-                    currentDayStats.GuessDistribution.Guesses5 += 1;
-                    break;
-                case 6:
-                    currentDayStats.GuessDistribution.Guesses6 += 1;
-                    break;
-                default:
-                    break;
+                // Wait until it is safe to enter
+                mutex.WaitOne();
+            
+                currentDayStats.NumPlayers += 1;
+
+                switch (numGuessed)
+                {
+                    case 1:
+                        currentDayStats.GuessDistribution.Guesses1 += 1;
+                        break;
+                    case 2:
+                        currentDayStats.GuessDistribution.Guesses2 += 1;
+                        break;
+                    case 3:
+                        currentDayStats.GuessDistribution.Guesses3 += 1;
+                        break;
+                    case 4:
+                        currentDayStats.GuessDistribution.Guesses4 += 1;
+                        break;
+                    case 5:
+                        currentDayStats.GuessDistribution.Guesses5 += 1;
+                        break;
+                    case 6:
+                        currentDayStats.GuessDistribution.Guesses6 += 1;
+                        break;
+                    default:
+                        break;
+                }
             }
+            finally 
+            { 
+                // Realease the mutex 
+                mutex.ReleaseMutex(); 
+            }
+
         }
 
         /// <summary>
