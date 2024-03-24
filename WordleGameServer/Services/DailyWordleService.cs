@@ -92,19 +92,22 @@ namespace WordleGameServer.Services
                     }
                 }
 
+                // prepare to get next word
+                GuessResponse repsonse = new ()
+                {
+                    CorrectGuess = guess.Guess == dailyWord,
+                    GameOver = numGuessed >= 6 || guess.Guess == dailyWord,
+                    Feedback = feedback
+                };
+
+                // send question 
+                await responseStream.WriteAsync(repsonse);
 
                 if (guess.Guess == dailyWord || numGuessed >= 6)
                 {
-                    isDone = true;
                     UpdateGameStats(numGuessed);
                     break;
                 }
-
-                // TODO: prepare to get next word?
-
-
-               
-            
             }
         }
 
