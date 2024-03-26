@@ -25,6 +25,11 @@ message GuessResponse {
     bool correctGuess = 1;
     bool gameOver = 2;
     string feedback = 3;
+    string included = 4;
+    string available = 5;
+    string excluded = 6;
+    bool isValid = 7;
+    uint32 numGuesses = 8;
 }
 
 message WordStatsRequest {

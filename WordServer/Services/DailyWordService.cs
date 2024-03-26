@@ -43,10 +43,7 @@ namespace WordServer.Services
 
         public override Task<WordReply> GetWord(WordRequest request, ServerCallContext context)
         {
-            // TODO: make it return ONE word per day
-
             // Select a random word from the loaded words
-
             foreach (var word in _words)
             {
                 Console.WriteLine(word);

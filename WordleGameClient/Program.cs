@@ -6,52 +6,95 @@ using WordleGameServer.Services;
 
 namespace WordleGameClient
 {
-    internal class Program
+    public class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             try
             {
                 var channel = GrpcChannel.ForAddress("http://localhost:5260");
                 var wordServ = new DailyWordle.DailyWordleClient(channel);
 
-                int numGuesses = 0;
-
-                string word;
+                string userGuess;
+                bool isDone = false;
+                int numGuesses = 1;
 
                 PrintHelp();
+                Console.Write("(1): ".PadRight(5, ' '));
 
-                do
+                using (var call = wordServ.Play())
                 {
-                    Console.WriteLine("\nWelcome to Wordle you have 6 guesses! and it needs to be 5 letters!");
 
-                    word = Console.ReadLine() ?? "";
-
-                    if (word.Length != 5)
+                    do
                     {
-                        Console.WriteLine("The word must be 5 characters long");
-                    }
-                    else
-                    {
-                        var reply = wordServ.GetDailyWordle(new DailyWordleRequest { Word = word });
+                        userGuess = Console.ReadLine() ?? "";
 
-                        Console.WriteLine("This is a test print out the daily word is " + reply.Word);
-                        while (word != reply.Word)
+                        if (userGuess.Length != 5)
                         {
-                            Console.WriteLine("Try again");
-                            word = Console.ReadLine() ?? "";
-                        }   
-                        Console.WriteLine("You got it!");
-                        numGuesses++;
-                    }
+                            Console.WriteLine("The word must be 5 characters long");
+                        }
 
-                } while (numGuesses != 6);
+                        GuessRequest request = new()
+                        {
+                            Guess = userGuess,
+                        };
 
+                        await call.RequestStream.WriteAsync(request);
+
+                        await call.ResponseStream.MoveNext();
+                        GuessResponse response = call.ResponseStream.Current;
+
+                        if (!response.IsValid)
+                        {
+                            Console.WriteLine("\nThat word is not in the wordled dictionary! Try a different word.");
+                            Console.Write($"({numGuesses}): ".PadRight(5, ' '));
+                            continue;
+                        }
+                        else if (!response.GameOver)
+                        {
+                            Console.WriteLine(response.Feedback.PadLeft(10, ' '));
+                            Console.WriteLine("\nIncluded: " + response.Included);
+                            Console.WriteLine("Available: " + response.Available);
+                            Console.WriteLine("Excluded: " + response.Excluded);
+
+                            
+                            Console.Write($"\n({response.NumGuesses}): ".PadRight(5, ' '));
+                        }
+                        else
+                        {
+                            Console.WriteLine(response.Feedback.PadLeft(10, ' '));
+                            Console.WriteLine("\nYou win!\n");
+                            await call.RequestStream.CompleteAsync();
+                            isDone = true;
+                        }
+
+
+
+                    } while (!isDone);
+
+                    //Console.WriteLine("Statistics");
+                    //Console.WriteLine("----------");
+                    //Console.WriteLine("\nPlayers:\t ");
+                    //Console.WriteLine("Winners:\t");
+                    //Console.WriteLine("Guess Distribution...");
+
+                    //Console.WriteLine("Press any key to exit.");
+                    //Console.ReadKey();
+                }
 
             } catch (RpcException)
             {
                 Console.WriteLine("Error The word server is currently unavaible");
             }
+
+            Console.WriteLine("Statistics");
+            Console.WriteLine("----------");
+            Console.WriteLine("\nPlayers:\t ");
+            Console.WriteLine("Winners:\t");
+            Console.WriteLine("Guess Distribution...");
+
+            Console.WriteLine("Press any key to exit.");
+            Console.ReadKey();
         }
 
         public static void PrintHelp()
@@ -66,7 +109,8 @@ namespace WordleGameClient
             Console.WriteLine("characters to show how good your guess was.");
             Console.WriteLine("\nx - means the letter above is not in the word.");
             Console.WriteLine("? - means the letter should be in another spot.");
-            Console.WriteLine("* - means the letter is correct in this spot.");
+            Console.WriteLine("* - means the letter is correct in this spot.\n");
+            Console.WriteLine("\tAvailable: a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z\n");
         }
     }
 }

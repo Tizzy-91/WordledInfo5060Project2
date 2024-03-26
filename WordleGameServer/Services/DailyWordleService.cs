@@ -28,87 +28,142 @@ namespace WordleGameServer.Services
         public override async Task Play(IAsyncStreamReader<GuessRequest> requestStream, IServerStreamWriter<GuessResponse> responseStream, ServerCallContext context)
         {
 
-            string alphabet = "abcdefghijklmnopqrstuvwxyz";
+            char[] alphabet = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 
+                'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z' };
 
             // populate available letters (alphabet)
-            List<string> availableLetters = new List<string>(alphabet.Select(c => c.ToString()));
-            List<string> includedLetters = new List<string>();
-            List<string> excludedLetters = new List<string>();
+            SortedSet<char> availableLetters = new SortedSet<char>(alphabet);
+            SortedSet<char> includedLetters = new();
+            SortedSet<char> excludedLetters = new();
 
-            int numGuessed = 0;
-            bool isDone = false;
-            string dailyWord = WordServiceClient.GetWord();
+            //string dailyWord = WordServiceClient.GetWord();
+            string dailyWord = "spoon";
 
+            int turnsUsed = 1;
+            bool gameWon = false;
+            char[] results = new char[5];
 
-            while (await requestStream.MoveNext())
+            // wait for client to send next message asynchronously
+            // exit if there are no more messages or the client closes the stream
+            // exit at 6 turns or if game is won
+            while (await requestStream.MoveNext() && !context.CancellationToken.IsCancellationRequested && turnsUsed < 6 && !gameWon)
             {
-                GuessRequest guess = requestStream.Current;
+                GuessRequest guess = requestStream.Current; 
+                GuessResponse response = null;
 
                 // check if it is a valid guess
                 bool isValid = WordServiceClient.ValidateGuess(guess.Guess);
                 if (!isValid)
                 {
-                    Console.WriteLine("Invalid guess. Please try again.");
+                    response = new()
+                    {
+                        IsValid = false,
+                    };
+
+
+                    await responseStream.WriteAsync(response);
                     continue;
                 }
 
-                numGuessed++;
-                string feedback = "";
-                int charIndex = 0;
+                turnsUsed++;
 
-                // update letters lists and generate feedback
-                foreach (char letter in guess.Guess)
+                if (guess.Guess == dailyWord)
                 {
-                    if (!dailyWord.Contains(letter.ToString()))
-                    {
-                        if (!excludedLetters.Contains(letter.ToString()))
-                        {
-                            excludedLetters.Add(letter.ToString());
-                        }
-                        feedback += 'x'; // letter is not in the word
-                    }
-                    else // letter is in dailyWord
-                    {
-                        if (!includedLetters.Contains(letter.ToString()))
-                        {
-                            includedLetters.Add(letter.ToString());  
-                        }
+                    gameWon = true;
 
-                        if (charIndex == dailyWord.IndexOf(letter.ToString())) 
-                        { 
-                            feedback += '*'; // letter is in correct spot
-                        }
-                        else
+                    for (int i = 0; i < results.Length; i++)
+                        results[i] = '*';
+                }
+                else
+                {
+                    Dictionary<char, int> matches = new Dictionary<char, int>()
+                    {
+                        { 'a', 0 }, { 'b', 0 }, { 'c', 0 }, { 'd', 0 }, { 'e', 0 },
+                        { 'f', 0 }, { 'g', 0 }, { 'h', 0 }, { 'i', 0 }, { 'j', 0 },
+                        { 'k', 0 }, { 'l', 0 }, { 'm', 0 }, { 'n', 0 }, { 'o', 0 },
+                        { 'p', 0 }, { 'q', 0 }, { 'r', 0 }, { 's', 0 }, { 't', 0 },
+                        { 'u', 0 }, { 'v', 0 }, { 'w', 0 }, { 'x', 0 }, { 'y', 0 },
+                        { 'z', 0 }
+                    };
+
+                    // search word played for letters that are in correct position
+                    for (int i = 0; i < guess.Guess.Length; i++)
+                    {
+                        char letter = guess.Guess[i];
+                        if (letter == dailyWord[i])
                         {
-                           feedback += '?'; // letter is in another spot
+                            results[i] = '*';
+                            matches[letter] = matches[letter]++;
+
+                            if (!includedLetters.Contains(letter))
+                                includedLetters.Add(letter);
+                            if (availableLetters.Contains(letter))
+                                availableLetters.Remove(letter);
                         }
-  
                     }
 
-                    // remove letter from available letters if it has not been guessed yet
-                    if (availableLetters.Contains(letter.ToString()))
+                    // search word played for additional correct letters that are not in correct position
+                    for (int i = 0; i < guess.Guess.Length; i++)
                     {
-                        availableLetters.Remove(letter.ToString());
+                        char letter = guess.Guess[i];
+                        if (CountFrequency(dailyWord, letter) == 0)
+                        {
+                            results[i] = 'x';
+
+                            if (!excludedLetters.Contains(letter))
+                                excludedLetters.Add(letter);
+
+                            if (availableLetters.Contains(letter))
+                                availableLetters.Remove(letter);
+                        }
+                        else if (letter != dailyWord[i])
+                        {
+                            if (matches[letter] < CountFrequency(dailyWord, letter))
+                            {
+                                results[i] = '?';
+                                matches[letter] = matches[letter]++;
+                                
+                                if (!includedLetters.Contains(letter))
+                                    includedLetters.Add(letter);
+                                if (availableLetters.Contains(letter))
+                                    availableLetters.Remove(letter);
+                            }
+                        }
                     }
                 }
 
                 // prepare to get next word
-                GuessResponse repsonse = new ()
+                if (response is null)
                 {
-                    CorrectGuess = guess.Guess == dailyWord,
-                    GameOver = numGuessed >= 6 || guess.Guess == dailyWord,
-                    Feedback = feedback
-                };
+                    response = new()
+                    {
+                        IsValid = true,
+                    };
 
-                // send question 
-                await responseStream.WriteAsync(repsonse);
-
-                if (guess.Guess == dailyWord || numGuessed >= 6)
-                {
-                    UpdateGameStats(numGuessed);
-                    break;
                 }
+
+                response.CorrectGuess = guess.Guess == dailyWord;
+                response.GameOver = turnsUsed >= 6 || guess.Guess == dailyWord;
+                response.Feedback = new string(results);
+                response.Included = String.Join(",", includedLetters);
+                response.Available = String.Join(",", availableLetters);
+                response.Excluded = String.Join(",", excludedLetters);
+                response.NumGuesses = (uint)turnsUsed;
+
+                if (guess.Guess == dailyWord || turnsUsed >= 6)
+                {
+                    //UpdateGameStats(turnsUsed);
+                    //break;
+                }
+
+                // send response 
+                await responseStream.WriteAsync(response);
             }
+        }
+
+        public static int CountFrequency(string word, char letter)
+        {
+            return word.Count(c => c == letter);
         }
 
         /// <summary>

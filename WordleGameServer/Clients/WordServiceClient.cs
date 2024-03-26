@@ -7,6 +7,8 @@ namespace WordleGameServer.Clients
     public static class WordServiceClient
     {
         public static DailyWord.DailyWordClient? _dailyWordClient = null;
+        public static string DailyWord = "";
+        public static DateTime previousFetchDate = DateTime.MinValue;
 
         /// <summary>
         /// Gets the daily word from WordServer
@@ -14,12 +16,23 @@ namespace WordleGameServer.Clients
         /// <returns></returns>
         public static string GetWord()
         {
+            if (DateTime.Today != previousFetchDate.Date)
+            {
+                ConnectToServer();
+                FetchNewWord();
+                previousFetchDate = DateTime.Today;
+            }
 
-            ConnectToServer();
+            return DailyWord;
+        }
 
-            WordReply? reply = _dailyWordClient?.GetWord(new WordRequest { });
-
-            return reply?.Word ?? "";
+        /// <summary>
+        /// Fetches a new word from the server
+        /// </summary>
+        private static void FetchNewWord()
+        {
+            WordReply reply = _dailyWordClient!.GetWord(new WordRequest { });
+            DailyWord = reply.Word;
         }
 
         /// <summary>
@@ -33,7 +46,7 @@ namespace WordleGameServer.Clients
 
             ValidateWordReply? reply = _dailyWordClient?.ValidateWord(new ValidateWordRequest { Guess = guess });
 
-            return reply?.Valid ??  false;
+            return reply?.Valid ?? false;
         }
 
         /// <summary>

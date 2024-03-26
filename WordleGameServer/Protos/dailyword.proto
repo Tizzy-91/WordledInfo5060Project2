@@ -2,6 +2,9 @@ syntax = "proto3";
 
 option csharp_namespace = "WordServer.Protos";
 
+/***** EMPTY MESSAGE *****/
+import "google/protobuf/empty.proto";
+
 package word;
 
 service DailyWord {
@@ -10,11 +13,12 @@ service DailyWord {
 }
 
 message WordReply {
-  string word = 1;
+	string word = 1;
+	string date = 2;
 }
 
 message WordRequest {
-	//string word = 1;
+
 }
 
 message ValidateWordRequest {
