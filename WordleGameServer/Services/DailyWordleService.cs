@@ -9,24 +9,17 @@ namespace WordleGameServer.Services
 {
     public class DailyWordleService : DailyWordle.DailyWordleBase
     {
-        private WordStatsResponse? currentDayStats = null;
         private static Mutex mutex = new Mutex();
+        private const string GAME_STATS_FILE = "gameStats.txt";
+        private static uint _numPlayers = 0;
+        private static uint _oneGuess = 0;
+        private static uint _twoGuess = 0;
+        private static uint _threeGuess = 0;
+        private static uint _fourGuess = 0;
+        private static uint _fiveGuess = 0;
+        private static uint _sixGuess = 0;
 
-        private static uint NumPlayers = 0;
-        private static uint oneGuess = 0;
-        private static uint twoGuess = 0;
-        private static uint threeGuess = 0;
-        private static uint fourGuess = 0;
-        private static uint fiveGuess = 0;
-        private static uint sixGuess = 0;
-        private static uint winnersPercentage = 0;
-
-
-        public DailyWordleService()
-        {
-            //currentDayStats = new WordStatsResponse();
-            //currentDayStats.GuessDistribution = new GuessDistribution();
-        }
+        public DailyWordleService() { }
 
         /// <summary>
         /// Runs the game of wordle
@@ -37,7 +30,7 @@ namespace WordleGameServer.Services
         /// <returns></returns>
         public override async Task Play(IAsyncStreamReader<GuessRequest> requestStream, IServerStreamWriter<GuessResponse> responseStream, ServerCallContext context)
         {
-            ++NumPlayers;
+            ++_numPlayers;
 
             char[] alphabet = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 
                 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z' };
@@ -47,9 +40,7 @@ namespace WordleGameServer.Services
             SortedSet<char> includedLetters = new();
             SortedSet<char> excludedLetters = new();
 
-            // TODO: change this back to being generated
-            //string dailyWord = WordServiceClient.GetWord();
-            string dailyWord = "spoon";
+            string dailyWord = WordServiceClient.GetWord();
 
             int turnsUsed = 0;
             bool gameWon = false;
@@ -164,6 +155,7 @@ namespace WordleGameServer.Services
                 if (guess.Guess == dailyWord && turnsUsed <= 6)
                 {
                     UpdateGameStats(turnsUsed);
+                    UploadGameStats();
                 }
 
                 // send response 
@@ -185,15 +177,15 @@ namespace WordleGameServer.Services
             dailyStats!.WinnersPercentage = (uint)CalculateWinnersPercentage();
             dailyStats!.GuessDistribution = new GuessDistribution
             {
-                Guesses1 = oneGuess,
-                Guesses2 = twoGuess,
-                Guesses3 = threeGuess,
-                Guesses4 = fourGuess,
-                Guesses5 = fiveGuess,
-                Guesses6 = sixGuess,
+                Guesses1 = _oneGuess,
+                Guesses2 = _twoGuess,
+                Guesses3 = _threeGuess,
+                Guesses4 = _fourGuess,
+                Guesses5 = _fiveGuess,
+                Guesses6 = _sixGuess,
 
             };
-            dailyStats!.NumPlayers = NumPlayers;
+            dailyStats!.NumPlayers = _numPlayers;
 
             return Task.FromResult(dailyStats);
         }
@@ -224,53 +216,66 @@ namespace WordleGameServer.Services
                 switch (numGuessed)
                 {
                     case 1:
-                        oneGuess++;
+                        _oneGuess++;
                         break;
                     case 2:
-                        twoGuess++;
+                        _twoGuess++;
                         break;
                     case 3:
-                        threeGuess++;
+                        _threeGuess++;
                         break;
                     case 4:
-                        fourGuess++;
+                        _fourGuess++;
                         break;
                     case 5:
-                        fiveGuess++;
+                        _fiveGuess++;
                         break;
                     case 6:
-                        sixGuess++;
+                        _sixGuess++;
                         break;
                     default:
                         break;
                 }
-
-                //winnersPercentage = (uint)CalculateWinnersPercentage();
             }
             finally 
             { 
                 // Realease the mutex 
                 mutex.ReleaseMutex(); 
             }
+        }
 
+        private static void UploadGameStats()
+        {
+            using (StreamWriter writer = new StreamWriter(GAME_STATS_FILE))
+            {
+                writer.WriteLine("NumPlayers: " + _numPlayers);
+                writer.WriteLine("WinnersPercentage: " + CalculateWinnersPercentage());
+                writer.WriteLine("Guess Distribution...");
+                writer.WriteLine($"1: {_oneGuess}");
+                writer.WriteLine($"2: {_twoGuess}");
+                writer.WriteLine($"3: {_threeGuess}");
+                writer.WriteLine($"4: {_fourGuess}");
+                writer.WriteLine($"5: {_fiveGuess}");
+                writer.WriteLine($"6: {_sixGuess}");
+            }
         }
 
         /// <summary>
         /// Calculates the percentage of winners based on the numbers of players and count of winners
         /// </summary>
         /// <returns>percentage of winners</returns>
-        private double CalculateWinnersPercentage()
+        private static double CalculateWinnersPercentage()
         {
-            UInt32 totalWinners = oneGuess +
-                                  twoGuess +
-                                  threeGuess +
-                                  fourGuess +
-                                  fiveGuess +
-                                  sixGuess;
+            UInt32 totalWinners = _oneGuess +
+                                  _twoGuess +
+                                  _threeGuess +
+                                  _fourGuess +
+                                  _fiveGuess +
+                                  _sixGuess;
 
-            if (NumPlayers > 0)
+            if (_numPlayers > 0)
             {
-                double percentage = (double)totalWinners / NumPlayers * 100;
+                double percentage = (double)totalWinners / _numPlayers * 100;
                 return percentage;
             }
             else

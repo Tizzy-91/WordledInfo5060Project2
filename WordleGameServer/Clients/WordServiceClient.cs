@@ -8,7 +8,7 @@ namespace WordleGameServer.Clients
     {
         public static DailyWord.DailyWordClient? _dailyWordClient = null;
         public static string DailyWord = "";
-        public static DateTime previousFetchDate = DateTime.MinValue;
+        public static DateTime previousFetchDate = DateTime.Today;
 
         /// <summary>
         /// Gets the daily word from WordServer
@@ -16,9 +16,13 @@ namespace WordleGameServer.Clients
         /// <returns></returns>
         public static string GetWord()
         {
-            if (DateTime.Today != previousFetchDate.Date)
+            ConnectToServer();
+            if (DailyWord.Length == 0)
             {
-                ConnectToServer();
+                FetchNewWord();
+            }
+            else if (DateTime.Today != previousFetchDate.Date)
+            {
                 FetchNewWord();
                 previousFetchDate = DateTime.Today;
             }
