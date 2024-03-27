@@ -9,7 +9,7 @@ package dailywordle;
 
 service DailyWordle {
   rpc Play (stream GuessRequest) returns (stream GuessResponse);
-  rpc GetStats (WordStatsRequest) returns (WordStatsResponse);
+  rpc GetStats (google.protobuf.Empty) returns (WordStatsResponse);
 }
 
 
@@ -30,10 +30,6 @@ message GuessResponse {
     string excluded = 6;
     bool isValid = 7;
     uint32 numGuesses = 8;
-}
-
-message WordStatsRequest {
-    // TODO: what do we need to request?
 }
 
 message WordStatsResponse {

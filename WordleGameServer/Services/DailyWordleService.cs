@@ -9,17 +9,27 @@ namespace WordleGameServer.Services
 {
     public class DailyWordleService : DailyWordle.DailyWordleBase
     {
-        private WordStatsResponse currentDayStats = new WordStatsResponse();
+        private WordStatsResponse? currentDayStats = null;
         private static Mutex mutex = new Mutex();
+
+        private static uint NumPlayers = 0;
+        private static uint oneGuess = 0;
+        private static uint twoGuess = 0;
+        private static uint threeGuess = 0;
+        private static uint fourGuess = 0;
+        private static uint fiveGuess = 0;
+        private static uint sixGuess = 0;
+        private static uint winnersPercentage = 0;
+
 
         public DailyWordleService()
         {
-            currentDayStats = new WordStatsResponse();
-            currentDayStats.GuessDistribution = new GuessDistribution();
+            //currentDayStats = new WordStatsResponse();
+            //currentDayStats.GuessDistribution = new GuessDistribution();
         }
 
         /// <summary>
-        /// runs the game of wordle
+        /// Runs the game of wordle
         /// </summary>
         /// <param name="requestStream"></param>
         /// <param name="responseStream"></param>
@@ -27,6 +37,7 @@ namespace WordleGameServer.Services
         /// <returns></returns>
         public override async Task Play(IAsyncStreamReader<GuessRequest> requestStream, IServerStreamWriter<GuessResponse> responseStream, ServerCallContext context)
         {
+            ++NumPlayers;
 
             char[] alphabet = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 
                 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z' };
@@ -36,10 +47,11 @@ namespace WordleGameServer.Services
             SortedSet<char> includedLetters = new();
             SortedSet<char> excludedLetters = new();
 
+            // TODO: change this back to being generated
             //string dailyWord = WordServiceClient.GetWord();
             string dailyWord = "spoon";
 
-            int turnsUsed = 1;
+            int turnsUsed = 0;
             bool gameWon = false;
             char[] results = new char[5];
 
@@ -49,7 +61,7 @@ namespace WordleGameServer.Services
             while (await requestStream.MoveNext() && !context.CancellationToken.IsCancellationRequested && turnsUsed < 6 && !gameWon)
             {
                 GuessRequest guess = requestStream.Current; 
-                GuessResponse response = null;
+                GuessResponse? response = null;
 
                 // check if it is a valid guess
                 bool isValid = WordServiceClient.ValidateGuess(guess.Guess);
@@ -59,7 +71,6 @@ namespace WordleGameServer.Services
                     {
                         IsValid = false,
                     };
-
 
                     await responseStream.WriteAsync(response);
                     continue;
@@ -148,22 +159,16 @@ namespace WordleGameServer.Services
                 response.Included = String.Join(",", includedLetters);
                 response.Available = String.Join(",", availableLetters);
                 response.Excluded = String.Join(",", excludedLetters);
-                response.NumGuesses = (uint)turnsUsed;
+                response.NumGuesses = (uint)turnsUsed + 1;
 
-                if (guess.Guess == dailyWord || turnsUsed >= 6)
+                if (guess.Guess == dailyWord && turnsUsed <= 6)
                 {
-                    //UpdateGameStats(turnsUsed);
-                    //break;
+                    UpdateGameStats(turnsUsed);
                 }
 
                 // send response 
                 await responseStream.WriteAsync(response);
-            }
-        }
-
-        public static int CountFrequency(string word, char letter)
-        {
-            return word.Count(c => c == letter);
+            } 
         }
 
         /// <summary>
@@ -172,12 +177,38 @@ namespace WordleGameServer.Services
         /// <param name="request"></param>
         /// <param name="context"></param>
         /// <returns>currents day's game stats</returns>
-        public override Task<WordStatsResponse> GetStats(WordStatsRequest request, ServerCallContext context)
+        public override Task<WordStatsResponse> GetStats(Empty request, ServerCallContext context)
         {
-            currentDayStats.WinnersPercentage = (UInt32)CalculateWinnersPercentage();
+            WordStatsResponse dailyStats = new WordStatsResponse();
 
-            return Task.FromResult(currentDayStats);
+
+            dailyStats!.WinnersPercentage = (uint)CalculateWinnersPercentage();
+            dailyStats!.GuessDistribution = new GuessDistribution
+            {
+                Guesses1 = oneGuess,
+                Guesses2 = twoGuess,
+                Guesses3 = threeGuess,
+                Guesses4 = fourGuess,
+                Guesses5 = fiveGuess,
+                Guesses6 = sixGuess,
+
+            };
+            dailyStats!.NumPlayers = NumPlayers;
+
+            return Task.FromResult(dailyStats);
         }
+        
+        /// <summary>
+        /// Returns the frequency of a letter occuring in a given word.
+        /// </summary>
+        /// <param name="word"></param>
+        /// <param name="letter"></param>
+        /// <returns>int frequency</returns>
+        public static int CountFrequency(string word, char letter)
+        {
+            return word.Count(c => c == letter);
+        }
+
 
         /// <summary>
         /// Updates the game stats
@@ -189,32 +220,32 @@ namespace WordleGameServer.Services
             {
                 // Wait until it is safe to enter
                 mutex.WaitOne();
-            
-                currentDayStats.NumPlayers += 1;
 
                 switch (numGuessed)
                 {
                     case 1:
-                        currentDayStats.GuessDistribution.Guesses1 += 1;
+                        oneGuess++;
                         break;
                     case 2:
-                        currentDayStats.GuessDistribution.Guesses2 += 1;
+                        twoGuess++;
                         break;
                     case 3:
-                        currentDayStats.GuessDistribution.Guesses3 += 1;
+                        threeGuess++;
                         break;
                     case 4:
-                        currentDayStats.GuessDistribution.Guesses4 += 1;
+                        fourGuess++;
                         break;
                     case 5:
-                        currentDayStats.GuessDistribution.Guesses5 += 1;
+                        fiveGuess++;
                         break;
                     case 6:
-                        currentDayStats.GuessDistribution.Guesses6 += 1;
+                        sixGuess++;
                         break;
                     default:
                         break;
                 }
+
+                //winnersPercentage = (uint)CalculateWinnersPercentage();
             }
             finally 
             { 
@@ -230,16 +261,16 @@ namespace WordleGameServer.Services
         /// <returns>percentage of winners</returns>
         private double CalculateWinnersPercentage()
         {
-            UInt32 totalWinners = currentDayStats.GuessDistribution.Guesses1 +
-                                  currentDayStats.GuessDistribution.Guesses2 +
-                                  currentDayStats.GuessDistribution.Guesses3 +
-                                  currentDayStats.GuessDistribution.Guesses4 +
-                                  currentDayStats.GuessDistribution.Guesses5 +
-                                  currentDayStats.GuessDistribution.Guesses6;
+            UInt32 totalWinners = oneGuess +
+                                  twoGuess +
+                                  threeGuess +
+                                  fourGuess +
+                                  fiveGuess +
+                                  sixGuess;
 
-            if (currentDayStats.NumPlayers > 0)
+            if (NumPlayers > 0)
             {
-                double percentage = (double)totalWinners / currentDayStats.NumPlayers * 100;
+                double percentage = (double)totalWinners / NumPlayers * 100;
                 return percentage;
             }
             else
@@ -247,6 +278,5 @@ namespace WordleGameServer.Services
                 return 0.0; // no players
             }
         }
-
     }
 }

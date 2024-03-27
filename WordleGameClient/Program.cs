@@ -24,7 +24,6 @@ namespace WordleGameClient
 
                 using (var call = wordServ.Play())
                 {
-
                     do
                     {
                         userGuess = Console.ReadLine() ?? "";
@@ -57,8 +56,8 @@ namespace WordleGameClient
                             Console.WriteLine("Available: " + response.Available);
                             Console.WriteLine("Excluded: " + response.Excluded);
 
-                            
-                            Console.Write($"\n({response.NumGuesses}): ".PadRight(5, ' '));
+                            numGuesses = (int)response.NumGuesses;
+                            Console.Write($"\n({numGuesses}): ".PadRight(5, ' '));
                         }
                         else
                         {
@@ -67,34 +66,36 @@ namespace WordleGameClient
                             await call.RequestStream.CompleteAsync();
                             isDone = true;
                         }
-
-
-
                     } while (!isDone);
+                
+                    WordStatsResponse? gameStats = wordServ.GetStats(new Google.Protobuf.WellKnownTypes.Empty());
 
-                    //Console.WriteLine("Statistics");
-                    //Console.WriteLine("----------");
-                    //Console.WriteLine("\nPlayers:\t ");
-                    //Console.WriteLine("Winners:\t");
-                    //Console.WriteLine("Guess Distribution...");
+                    Console.WriteLine("Statistics");
+                    Console.WriteLine("----------");
+                    Console.Write("\nPlayers: ".PadRight(25, ' '));
+                    Console.Write($"{gameStats.NumPlayers}".PadLeft(10, ' '));
+                    Console.Write("\nWinners:".PadRight(25, ' '));
+                    Console.Write($"{gameStats.WinnersPercentage}".PadLeft(10, ' '));
+                    Console.WriteLine("\nGuess Distribution...".PadRight(25, ' '));
+                    Console.WriteLine($" 1: {gameStats.GuessDistribution.Guesses1}");
+                    Console.WriteLine($" 2: {gameStats.GuessDistribution.Guesses2}");
+                    Console.WriteLine($" 3: {gameStats.GuessDistribution.Guesses3}");
+                    Console.WriteLine($" 4: {gameStats.GuessDistribution.Guesses4}");
+                    Console.WriteLine($" 5: {gameStats.GuessDistribution.Guesses5}");
+                    Console.WriteLine($" 6: {gameStats.GuessDistribution.Guesses6}");
 
-                    //Console.WriteLine("Press any key to exit.");
-                    //Console.ReadKey();
+                    Console.WriteLine("\nPress any key to exit.");
+                    Console.ReadKey();
                 }
+
+
 
             } catch (RpcException)
             {
                 Console.WriteLine("Error The word server is currently unavaible");
             }
 
-            Console.WriteLine("Statistics");
-            Console.WriteLine("----------");
-            Console.WriteLine("\nPlayers:\t ");
-            Console.WriteLine("Winners:\t");
-            Console.WriteLine("Guess Distribution...");
 
-            Console.WriteLine("Press any key to exit.");
-            Console.ReadKey();
         }
 
         public static void PrintHelp()
