@@ -1,6 +1,5 @@
 ﻿using Grpc.Core;
 using Grpc.Net.Client;
-using System;
 using WordleGameServer.Protos;
 using WordleGameServer.Services;
 

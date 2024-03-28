@@ -2,8 +2,6 @@
 using Google.Protobuf.WellKnownTypes;
 using WordleGameServer.Clients;
 using WordleGameServer.Protos;
-using System;
-using System.Threading;
 
 namespace WordleGameServer.Services
 {
@@ -11,6 +9,7 @@ namespace WordleGameServer.Services
     {
         private static Mutex mutex = new Mutex();
         private const string GAME_STATS_FILE = "gameStats.txt";
+        private static string _trackedWord = "";
         private static uint _numPlayers = 0;
         private static uint _oneGuess = 0;
         private static uint _twoGuess = 0;
@@ -30,7 +29,6 @@ namespace WordleGameServer.Services
         /// <returns></returns>
         public override async Task Play(IAsyncStreamReader<GuessRequest> requestStream, IServerStreamWriter<GuessResponse> responseStream, ServerCallContext context)
         {
-            ++_numPlayers;
 
             char[] alphabet = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 
                 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z' };
@@ -41,7 +39,14 @@ namespace WordleGameServer.Services
             SortedSet<char> excludedLetters = new();
 
             string dailyWord = WordServiceClient.GetWord();
+            
+            if (_trackedWord != dailyWord)
+            {
+                ResetGameStats();
+                _trackedWord = dailyWord;
+            }
 
+            ++_numPlayers;
             int turnsUsed = 0;
             bool gameWon = false;
             char[] results = new char[5];
@@ -244,6 +249,9 @@ namespace WordleGameServer.Services
             }
         }
 
+        /// <summary>
+        /// Uploads the game statistics to a file.
+        /// </summary>
         private static void UploadGameStats()
         {
             using (StreamWriter writer = new StreamWriter(GAME_STATS_FILE))
@@ -258,6 +266,22 @@ namespace WordleGameServer.Services
                 writer.WriteLine($"5: {_fiveGuess}");
                 writer.WriteLine($"6: {_sixGuess}");
             }
+        }
+
+        /// <summary>
+        /// Resets the game statistics for the UI and file. To be used each day.
+        /// </summary>
+        private static void ResetGameStats()
+        {
+            _numPlayers = 0;
+            _oneGuess = 0;
+            _twoGuess = 0;
+            _threeGuess = 0;
+            _fourGuess = 0;
+            _fiveGuess = 0;
+            _sixGuess = 0;
+            CalculateWinnersPercentage();
+            UploadGameStats();
         }
 
         /// <summary>
