@@ -1,8 +1,6 @@
 ﻿using Grpc.Core;
 using Grpc.Net.Client;
-using System;
 using WordleGameServer.Protos;
-using WordleGameServer.Services;
 
 namespace WordleGameClient
 {
@@ -31,6 +29,8 @@ namespace WordleGameClient
                         if (userGuess.Length != 5)
                         {
                             Console.WriteLine("The word must be 5 characters long");
+                            Console.Write($"({numGuesses}): ".PadRight(5, ' '));
+                            continue;
                         }
 
                         GuessRequest request = new()
@@ -43,9 +43,9 @@ namespace WordleGameClient
                         await call.ResponseStream.MoveNext();
                         GuessResponse response = call.ResponseStream.Current;
 
-                        if (!response.IsValid)
+                        if (!response.IsValid && userGuess.Length == 5)
                         {
-                            Console.WriteLine("\nThat word is not in the wordled dictionary! Try a different word.");
+                            Console.WriteLine("\nThat word is not in the wordled dictionary! Try a different word.\n");
                             Console.Write($"({numGuesses}): ".PadRight(5, ' '));
                             continue;
                         }
@@ -63,7 +63,7 @@ namespace WordleGameClient
                         {
                             Console.WriteLine(response.Feedback.PadLeft(10, ' '));
                             Console.WriteLine("\nYou win!\n");
-                            await call.RequestStream.CompleteAsync();
+                            //await call.RequestStream.CompleteAsync();
                             isDone = true;
                         }
                     } while (!isDone);
@@ -84,15 +84,13 @@ namespace WordleGameClient
                     Console.WriteLine($" 5: {gameStats.GuessDistribution.Guesses5}");
                     Console.WriteLine($" 6: {gameStats.GuessDistribution.Guesses6}");
 
-                    Console.WriteLine("\nPress any key to exit.");
-                    Console.ReadKey();
-                }
-
+                Console.WriteLine("\nPress any key to exit.");
+                Console.ReadKey();
 
 
             } catch (RpcException)
             {
-                Console.WriteLine("Error The word server is currently unavaible");
+                Console.WriteLine("Error: The word server is currently unavaible.");
             }
 
 
