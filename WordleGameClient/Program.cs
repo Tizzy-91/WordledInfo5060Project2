@@ -1,6 +1,8 @@
 ﻿using Grpc.Core;
 using Grpc.Net.Client;
+using System;
 using WordleGameServer.Protos;
+using WordleGameServer.Services;
 
 namespace WordleGameClient
 {
@@ -63,7 +65,7 @@ namespace WordleGameClient
                         {
                             Console.WriteLine(response.Feedback.PadLeft(10, ' '));
                             Console.WriteLine("\nYou win!\n");
-                            //await call.RequestStream.CompleteAsync();
+                            await call.RequestStream.CompleteAsync();
                             isDone = true;
                         }
                     } while (!isDone);
@@ -84,11 +86,12 @@ namespace WordleGameClient
                     Console.WriteLine($" 5: {gameStats.GuessDistribution.Guesses5}");
                     Console.WriteLine($" 6: {gameStats.GuessDistribution.Guesses6}");
 
-                Console.WriteLine("\nPress any key to exit.");
-                Console.ReadKey();
+                    Console.WriteLine("\nPress any key to exit.");
+                    Console.ReadKey();
+                }
 
-
-            } catch (RpcException)
+            } 
+            catch (RpcException)
             {
                 Console.WriteLine("Error: The word server is currently unavaible.");
             }
